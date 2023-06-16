@@ -1,47 +1,21 @@
 #include <ezButton.h>
-#include <PS4Controller.h>
-
-#include "esp_bt_main.h"
-#include "esp_bt_device.h"
-#include"esp_gap_bt_api.h"
-#include "esp_err.h"
-
-#if !defined(CONFIG_BT_SPP_ENABLED)
-#error Serial Bluetooth not available or not enabled. It is only available for the ESP32 chip.
-#endif
-
-#define REMOVE_BONDED_DEVICES 1   // <- Set to 0 to view all bonded devices addresses, set to 1 to remove
-
-#define PAIR_MAX_DEVICES 20
-uint8_t pairedDeviceBtAddr[PAIR_MAX_DEVICES][6];
-char bda_str[18];
+#include <ps5Controller.h>
 
 const int motorPinFwd[2] = {5, 13};
 const int reversePin[2] = {12, 23};
 const int resetFlashPin = 18;
 const int resetESPin = 14;
 const int buzzerPin = 19;
+
 const int greenLight = 2;
 const int yellowLight = 2;
 const int redLight = 2;
+
 bool revState[2] = {0, 0};
 int speed[2] = {0, 0};
 bool reset = 0;
 
 ezButton resetButton(resetFlashPin);
-
-// Interrupt service routine to reset the ESP32
-void IRAM_ATTR resetModule() {
-  Serial.println("Resetting module...");
-  for (int i = 0; i < 5; i++)
-  {
-    digitalWrite(buzzerPin, HIGH);
-    delay(200);
-    digitalWrite(buzzerPin, LOW);
-    delay(200);
-  }
-  esp_restart();
-}
 
 void setup() {
 
@@ -52,18 +26,20 @@ void setup() {
   // attach the interrupt to the reset button when it is pressed
   attachInterrupt(digitalPinToInterrupt(resetESPin), resetModule, FALLING);
 
-  // Replace the "1a:2b:3c:01:01:01" with the MAC address of the laptop
-  PS4.begin("50:84:92:81:b7:a7");
+  ps5.begin("48:18:8D:EC:69:F7"); // MAC Address Controller Giga
+  
   Serial.println("Ready.");
+  
+  // Pin Mode Declaration
   pinMode(buzzerPin, OUTPUT);
   for(int i = 0; i < 2; i++)
   {
     pinMode(motorPinFwd[i], OUTPUT);
     pinMode(reversePin[i], OUTPUT);
   }
-  pinMode(redLight, OUTPUT);
-  pinMode(greenLight, OUTPUT);
-  pinMode(yellowLight, OUTPUT);
+  // pinMode(redLight, OUTPUT);
+  // pinMode(greenLight, OUTPUT);
+  // pinMode(yellowLight, OUTPUT);
 }
 
 void loop() {
@@ -76,63 +52,37 @@ void loop() {
     delay(2000);
     digitalWrite(buzzerPin, LOW);
     reset = true;
-  } else if(!resetButton.isPressed() && reset)
+  } 
+  else if(!resetButton.isPressed() && reset)
   {
     reset = false;
   }
 
-  if (PS4.isConnected()) {
-    if (PS4.Right()) Serial.println("Right Button");
-    if (PS4.Down()) Serial.println("Down Button");
-    if (PS4.Up()) Serial.println("Up Button");
-    if (PS4.Left()) Serial.println("Left Button");
-
-    if (PS4.Square()) Serial.println("Square Button");
-    if (PS4.Cross()){
-      digitalWrite(buzzerPin, HIGH);
-    } else{
-      digitalWrite(buzzerPin, LOW);
-    }
-    if (PS4.Circle()) Serial.println("Circle Button");
-    if (PS4.Triangle()) Serial.println("Triangle Button");
-
-    if (PS4.UpRight()) Serial.println("Up Right");
-    if (PS4.DownRight()) Serial.println("Down Right");
-    if (PS4.UpLeft()) Serial.println("Up Left");
-    if (PS4.DownLeft()) Serial.println("Down Left");
-
-    if (PS4.L1())
-    {
-    }
-    if (PS4.R1())
-    {
-    }
-
-    if (PS4.Share()) Serial.println("Share Button");
-    if (PS4.Options()) Serial.println("Options Button");
-    if (PS4.L3()) Serial.println("L3 Button");
-    if (PS4.R3()) Serial.println("R3 Button");
-
-    if (PS4.PSButton()) ;
-    if (PS4.Touchpad()) ;
-
-    if (PS4.L2()) {
-      
-    }
-    if (PS4.R2()) {
-      
+  // When the PS5 controller is connected, the robot will move
+  if (ps5.isConnected()) {
+    if (!ps5.Right() && !ps5.Right() && !ps5.Down() && !ps5.Left() && !ps5.UpLeft() && !ps5.UpRight() && !ps5.DownLeft() && !ps5.DownRight()) {
+      leftAnalog.updateValue(ps5.LStickX(), ps5.LStickY());
+      rightAnalog.updateValue(ps5.RStickX(), ps5.RStickY());
+      diffDrive.updateValue(leftAnalog, rightAnalog);
+      diffDrive.baseMoveNoPID();
     }
 
     updateSpeed();
     printSpeed();
   }
   else {
-    for(int i = 0; i < 2; i++)
-    {
-      speed[i] = 0;
-    }
+    killswitch();
   }
+
   motorWrite();
+}
+
+void killswitch()
+{
+  for(int i = 0; i < 2; i++)
+  {
+    speed[i] = 0;
+  }
 }
 
 void updateSpeed()
@@ -151,6 +101,7 @@ void updateSpeed()
       speed[i] = -255;
   }
 }
+
 void removeFlashMemory()
 {
   initBluetooth();
@@ -265,32 +216,15 @@ void motorWrite()
   }
 }
 
-bool initBluetooth()
-{
-  if(!btStart()) {
-    Serial.println("Failed to initialize controller");
-    return false;
+// Interrupt service routine to reset the ESP32
+void IRAM_ATTR resetModule() {
+  Serial.println("Resetting module...");
+  for (int i = 0; i < 5; i++)
+  {
+    digitalWrite(buzzerPin, HIGH);
+    delay(200);
+    digitalWrite(buzzerPin, LOW);
+    delay(200);
   }
- 
-  if(esp_bluedroid_init() != ESP_OK) {
-    Serial.println("Failed to initialize bluedroid");
-    return false;
-  }
- 
-  if(esp_bluedroid_enable() != ESP_OK) {
-    Serial.println("Failed to enable bluedroid");
-    return false;
-  }
-  return true;
+  esp_restart();
 }
-
-char *bda2str(const uint8_t* bda, char *str, size_t size)
-{
-  if (bda == NULL || str == NULL || size < 18) {
-    return NULL;
-  }
-  sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
-          bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
-  return str;
-}
-

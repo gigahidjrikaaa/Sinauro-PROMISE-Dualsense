@@ -1,5 +1,7 @@
 #include <ezButton.h>
 #include <ps5Controller.h>
+#include "math.h"
+#include "Controller_Commands.h"
 
 const int motorPinFwd[2] = {5, 13};
 const int reversePin[2] = {12, 23};
@@ -39,7 +41,7 @@ void setup() {
   resetButton.setDebounceTime(50);
 
   // attach the interrupt to the reset button when it is pressed
-  // attachInterrupt(digitalPinToInterrupt(resetESPin), resetModule, FALLING);
+  attachInterrupt(digitalPinToInterrupt(resetESPin), resetModule, FALLING);
 
   // MAC Address Controller Giga 48:18:8D:EC:69:F7
   ps5.begin("48:18:8D:EC:69:F7"); 
@@ -82,12 +84,12 @@ void loop() {
 
     updateSpeed();
     printSpeed();
+    motorWrite();
   }
   else {
     killswitch();
+    motorWrite();
   }
-
-  motorWrite();
 }
 
 void killswitch()
@@ -112,17 +114,19 @@ void updateSpeed()
       speed[i] = 255;
     else if(speed[i] < -255)
       speed[i] = -255;
+    else if(abs(speed[i]) < 15)
+      speed[i] = 0;
   }
 }
 
 unsigned long int printSpeedTime;
 void printSpeed()
 {
-  if(millis() - printSpeedTime >= 200)
+  if(millis() - printSpeedTime >= 100)
   {
-    Serial.printf("%d\tSpeed1: %d\tSpeed2: %d\tRev1: %d\tRev2: %d\n", millis(), speed[0], speed[1], revState[0], revState[1]);
+    Serial.printf("%d\tSpeed1: %d\tSpeed2: %d\tRev1: %d\t\tRev2: %d\n", millis(), speed[0], speed[1], revState[0], revState[1]);
     printSpeedTime = millis();
-  } 
+  }
 }
 
 void motorWrite()
@@ -130,11 +134,12 @@ void motorWrite()
   for(int i = 0; i < 2; i++)
   {
     if(speed[i] < 0){
-      digitalWrite(reversePin[i], HIGH);
+      revState[i] = HIGH;
     }
     else{
-      digitalWrite(reversePin[i], LOW);
+      revState[i] = LOW;
     }
+    digitalWrite(reversePin[i], revState[i]);
     analogWrite(motorPinFwd[i], abs(speed[i]));
   }
 }

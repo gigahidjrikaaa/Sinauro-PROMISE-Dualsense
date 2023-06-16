@@ -1,5 +1,5 @@
-#IFNDEF CONTROLLER_COMMANDS_H
-#DEFINE CONTROLLER_COMMANDS_H
+#ifndef CONTROLLER_COMMANDS_H
+#define CONTROLLER_COMMANDS_H
 
 class ControllerCommands{
     unsigned long pushTime = 0;
@@ -14,11 +14,11 @@ class ControllerCommands{
             }
             if (ps5.Down())
             {
-                digitalWrite(pinPneumatic, HIGH);
+                
             }
             if (ps5.Up())
             {
-                digitalWrite(pinPneumatic, LOW);
+                
             }
             if (ps5.Left())
             {
@@ -27,19 +27,19 @@ class ControllerCommands{
 
             if (ps5.UpRight()) 
             {
-                leftAnalog.updateValue(128, 128);
+                // leftAnalog.updateValue(128, 128);
             }
             if (ps5.DownRight())
             {
-                leftAnalog.updateValue(128, -128);
+                // leftAnalog.updateValue(128, -128);
             }
             if (ps5.UpLeft())
             {
-                leftAnalog.updateValue(-128, 128);
+                // leftAnalog.updateValue(-128, 128);
             }
             if (ps5.DownLeft())
             {
-                leftAnalog.updateValue(-128, -128);
+                // leftAnalog.updateValue(-128, -128);
             }
 
             if (ps5.Square())
@@ -49,9 +49,9 @@ class ControllerCommands{
             
             if (ps5.Cross())
             {
-                digitalWrite(buzzerPin, HIGH);
+                // digitalWrite(buzzerPin, HIGH);
             } else{
-                digitalWrite(buzzerPin, LOW);
+                // digitalWrite(buzzerPin, LOW);
             }
 
             if (ps5.Circle()) 
@@ -84,14 +84,12 @@ class ControllerCommands{
 
             if (ps5.L3()) 
             {
-                sudutCatapult = 0.8;
-                speedCatapult = 185;
+                
             }
 
             if (ps5.R3()) 
             {
-                sudutCatapult = 0.8;
-                speedCatapult = 255;
+                
             }
 
             if (ps5.PSButton()) 
@@ -101,19 +99,15 @@ class ControllerCommands{
             if (ps5.Touchpad()) 
             {
                 // Killswitch the robot. To turn off, restart the robot.
-                diffDrive.killswitch();
-                while(true);
+                // diffDrive.killswitch();
+                // while(true);
             }
 
             if (ps5.L2() >= 128) {
                 // Serial.printf("L2 button at %d\n", ps5.L2Value());
-                sudutCatapult = 1;
-                speedCatapult = 255;
             }
             if (ps5.R2() >= 128) {
                 // Serial.printf("R2 button at %d\n", ps5.R2Value());
-                sudutCatapult = 0.9;
-                speedCatapult = 255;
             }
 
             // if no buttons are pressed
@@ -127,4 +121,4 @@ class ControllerCommands{
 
 ControllerCommands controllerCommands;
 
-#ENDIF
+#endif

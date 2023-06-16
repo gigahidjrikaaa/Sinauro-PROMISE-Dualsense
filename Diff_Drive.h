@@ -1,5 +1,5 @@
-#IFNDEF DIFF_DRIVE_H
-#DEFINE DIFF_DRIVE_H
+#ifndef DIFF_DRIVE_H
+#define DIFF_DRIVE_H
 
 #include "Analog_Joystick.h"
 
@@ -103,4 +103,4 @@ class DiffDrive
 
 DiffDrive diffDrive;
 
-#ENDIF
+#endif

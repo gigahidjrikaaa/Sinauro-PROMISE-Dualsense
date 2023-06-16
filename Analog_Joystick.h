@@ -1,5 +1,5 @@
-#IFNDEF ANALOG_JOYSTICK_H
-#DEFINE ANALOG_JOYSTICK_H
+#ifndef ANALOG_JOYSTICK_H
+#define ANALOG_JOYSTICK_H
 
 #include "math.h"
 
@@ -56,6 +56,3 @@ class Analog
 Analog leftAnalog, rightAnalog;
 
 #endif
-
-
-#ENDIF

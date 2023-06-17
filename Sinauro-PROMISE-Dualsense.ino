@@ -3,15 +3,17 @@
 #include "math.h"
 #include "Controller_Commands.h"
 
-const int motorPinFwd[2] = {5, 13};
-const int reversePin[2] = {12, 23};
+// const int motorPinFwd[2] = {25, 26};
+// const int reversePin[2] = {16, 17};
+const int motorPinFwd[2] = {5, 12};
+const int reversePin[2] = {13, 23};
 const int resetFlashPin = 18;
 const int resetESPin = 14;
 const int buzzerPin = 19;
 
-const int greenLight = 2;
-const int yellowLight = 2;
-const int redLight = 2;
+// const int greenLight = 2;
+// const int yellowLight = 2;
+// const int redLight = 2;
 
 bool revState[2] = {0, 0};
 int speed[2] = {0, 0};
@@ -41,7 +43,7 @@ void setup() {
   resetButton.setDebounceTime(50);
 
   // attach the interrupt to the reset button when it is pressed
-  attachInterrupt(digitalPinToInterrupt(resetESPin), resetModule, FALLING);
+  // attachInterrupt(digitalPinToInterrupt(resetESPin), resetModule, FALLING);
 
   // MAC Address Controller Giga 48:18:8D:EC:69:F7
   ps5.begin("48:18:8D:EC:69:F7"); 
@@ -68,6 +70,7 @@ void loop() {
     digitalWrite(buzzerPin, HIGH);
     delay(2000);
     digitalWrite(buzzerPin, LOW);
+    esp_restart();
     reset = true;
   } 
   else if(!resetButton.isPressed() && reset)
@@ -84,12 +87,19 @@ void loop() {
 
     updateSpeed();
     printSpeed();
-    motorWrite();
+
   }
   else {
     killswitch();
-    motorWrite();
+
+    Serial.println("Not Connected...");
+    speed[0] = 100;
+    speed[1] = 100;
+    
+    delay(500);
   }
+
+  motorWrite();
 }
 
 void killswitch()

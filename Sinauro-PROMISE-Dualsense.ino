@@ -5,11 +5,14 @@
 
 // const int motorPinFwd[2] = {25, 26};
 // const int reversePin[2] = {16, 17};
-const int motorPinFwd[2] = {5, 12};
-const int reversePin[2] = {13, 23};
+// const int motorPinFwd[2] = {5, 12};
+// const int reversePin[2] = {13, 23};
 const int resetFlashPin = 18;
-const int resetESPin = 14;
+const int resetESPin = 12;
 const int buzzerPin = 19;
+
+const int motorSpeedPin[2] = {14, 26};
+const int directionPin[2][2] = {{27, 16}, {17, 25}};
 
 // const int greenLight = 2;
 // const int yellowLight = 2;
@@ -33,7 +36,7 @@ void IRAM_ATTR resetModule() {
     digitalWrite(buzzerPin, LOW);
     delay(200);
   }
-  esp_restart();
+  // esp_restart();
 }
 
 void setup() {
@@ -54,9 +57,13 @@ void setup() {
   pinMode(buzzerPin, OUTPUT);
   for(int i = 0; i < 2; i++)
   {
-    pinMode(motorPinFwd[i], OUTPUT);
-    pinMode(reversePin[i], OUTPUT);
+    // pinMode(motorPinFwd[i], OUTPUT);
+    // pinMode(reversePin[i], OUTPUT);
+    pinMode(motorSpeedPin[i], OUTPUT);
+    pinMode(directionPin[i][0], OUTPUT);
+    pinMode(directionPin[i][1], OUTPUT);
   }
+  
   // pinMode(redLight, OUTPUT);
   // pinMode(greenLight, OUTPUT);
   // pinMode(yellowLight, OUTPUT);
@@ -80,11 +87,12 @@ void loop() {
 
   // When the PS5 controller is connected, the robot will move
   if (ps5.isConnected()) {
-    if (!ps5.Right() && !ps5.Right() && !ps5.Down() && !ps5.Left() && !ps5.UpLeft() && !ps5.UpRight() && !ps5.DownLeft() && !ps5.DownRight()) {
-      // leftAnalog.updateValue(ps5.LStickX(), ps5.LStickY());
-      // rightAnalog.updateValue(ps5.RStickX(), ps5.RStickY());
-    }
+    // if (!ps5.Right() && !ps5.Right() && !ps5.Down() && !ps5.Left() && !ps5.UpLeft() && !ps5.UpRight() && !ps5.DownLeft() && !ps5.DownRight()) {
+    //   // leftAnalog.updateValue(ps5.LStickX(), ps5.LStickY());
+    //   // rightAnalog.updateValue(ps5.RStickX(), ps5.RStickY());
+    // }
 
+    // controllerCommands.updateButtons();
     updateSpeed();
     printSpeed();
 
@@ -93,13 +101,14 @@ void loop() {
     killswitch();
 
     Serial.println("Not Connected...");
-    speed[0] = 100;
-    speed[1] = 100;
-    
-    delay(500);
+
+    speed[0] = 1;
+    speed[1] = 1;
+
+    delay(100);
   }
 
-  motorWrite();
+  new_motorWrite();
 }
 
 void killswitch()
@@ -116,9 +125,9 @@ void updateSpeed()
   {
     speed[i] = ps5.LStickY() * 1.5 + 0.25 * ps5.R2() - 0,25 * ps5.L2();
     if(i % 2 == 0)
-      speed[i] -= ps5.RStickX() * 0.5 - ps5.Right() * 255 + ps5.Left() * 255 - ps5.Up() * 255 + ps5.Down() * 255;
+      speed[i] += ps5.RStickX() * 1.5 + ps5.Right() * 255 - ps5.Left() * 255 + ps5.Up() * 255 - ps5.Down() * 255;
     else if(i % 2 == 1)
-      speed[i] += ps5.RStickX() * 0.5 - ps5.Right() * 255 + ps5.Left() * 255 + ps5.Up() * 255 - ps5.Down() * 255;
+      speed[i] -= ps5.RStickX() * 1.5 + ps5.Right() * 255 - ps5.Left() * 255 - ps5.Up() * 255 + ps5.Down() * 255;
 
     if(speed[i] > 255)
       speed[i] = 255;
@@ -132,24 +141,50 @@ void updateSpeed()
 unsigned long int printSpeedTime;
 void printSpeed()
 {
-  if(millis() - printSpeedTime >= 100)
+  if(millis() - printSpeedTime >= 1)
   {
-    Serial.printf("%d\tSpeed1: %d\tSpeed2: %d\tRev1: %d\t\tRev2: %d\n", millis(), speed[0], speed[1], revState[0], revState[1]);
+    Serial.printf("%d\tSpeed1: %d\tSpeed2: %d\n", millis(), speed[0], speed[1]);
+    if(ps5.Cross())
+    {
+        digitalWrite(buzzerPin, HIGH);
+        Serial.println("HONK");
+    } else{
+        digitalWrite(buzzerPin, LOW);
+    }
+    
+
     printSpeedTime = millis();
   }
 }
 
-void motorWrite()
+// void motorWrite()
+// {
+//   for(int i = 0; i < 2; i++)
+//   {
+//     if(speed[i] < 0){
+//       revState[i] = HIGH;
+//     }
+//     else{
+//       revState[i] = LOW;
+//     }
+//     digitalWrite(reversePin[i], revState[i]);
+//     analogWrite(motorPinFwd[i], abs(speed[i]));
+//   }
+// }
+
+void new_motorWrite()
 {
   for(int i = 0; i < 2; i++)
   {
     if(speed[i] < 0){
-      revState[i] = HIGH;
+      digitalWrite(directionPin[i][0], HIGH);
+      digitalWrite(directionPin[i][1], LOW);
     }
     else{
-      revState[i] = LOW;
+      digitalWrite(directionPin[i][0], LOW);
+      digitalWrite(directionPin[i][1], HIGH);
     }
-    digitalWrite(reversePin[i], revState[i]);
-    analogWrite(motorPinFwd[i], abs(speed[i]));
+    // digitalWrite(reversePin[i], revState[i]);
+    analogWrite(motorSpeedPin[i], abs(speed[i]));
   }
 }

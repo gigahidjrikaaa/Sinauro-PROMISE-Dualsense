@@ -49,9 +49,10 @@ class ControllerCommands{
             
             if (ps5.Cross())
             {
-                // digitalWrite(buzzerPin, HIGH);
+                digitalWrite(19, HIGH);
+                Serial.println("HONK");
             } else{
-                // digitalWrite(buzzerPin, LOW);
+                digitalWrite(19, LOW);
             }
 
             if (ps5.Circle()) 

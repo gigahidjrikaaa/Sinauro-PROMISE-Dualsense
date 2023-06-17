@@ -73,7 +73,7 @@ void loop() {
   resetButton.loop();
   if(resetButton.isPressed() && !reset)
   {
-    Serial.println("=========== FLASH MEMORY RESET ===========");
+    Serial.println("=========== ESP32 RESET ===========");
     digitalWrite(buzzerPin, HIGH);
     delay(2000);
     digitalWrite(buzzerPin, LOW);
@@ -94,6 +94,7 @@ void loop() {
 
     // controllerCommands.updateButtons();
     updateSpeed();
+    // updateSpeedManual(speed[0], speed[1]);
     printSpeed();
 
   }
@@ -135,7 +136,39 @@ void updateSpeed()
       speed[i] = -255;
     else if(abs(speed[i]) < 15)
       speed[i] = 0;
+
+    if(speed[i] < 0){
+      revState[i] = HIGH;
+    }
+    else{
+      revState[i] = LOW;
+    }
+    digitalWrite(reversePin[i], revState[i]);
+    analogWrite(motorPinFwd[i], abs(speed[i]));
   }
+}
+
+void updateSpeedManual(int &speed1, int &speed2)
+{
+  speed1 = ps5.LStickY() * 1.5 + 0.25 * ps5.R2() - 0,25 * ps5.L2();
+  speed2 = ps5.LStickY() * 1.5 + 0.25 * ps5.R2() - 0,25 * ps5.L2();
+
+  speed1 -= ps5.RStickX() * 0.5 - ps5.Right() * 255 + ps5.Left() * 255 - ps5.Up() * 255 + ps5.Down() * 255;
+  speed2 += ps5.RStickX() * 0.5 - ps5.Right() * 255 + ps5.Left() * 255 + ps5.Up() * 255 - ps5.Down() * 255;
+
+  if(speed1 > 255)
+    speed1 = 255;
+  else if(speed1 < -255)
+    speed1 = -255;
+  else if(abs(speed1) < 15)
+    speed1 = 0;
+
+  if(speed2 > 255)
+    speed2 = 255;
+  else if(speed2 < -255)
+    speed2 = -255;
+  else if(abs(speed2) < 15)
+    speed2 = 0;
 }
 
 unsigned long int printSpeedTime;

@@ -3,12 +3,12 @@
 #include "math.h"
 #include "Controller_Commands.h"
 
-// const int motorPinFwd[2] = {25, 26};
-// const int reversePin[2] = {16, 17};
-const int motorPinFwd[2] = {5, 12};
-const int reversePin[2] = {13, 23};
+const int motorPinFwd[2] = {25, 26};
+const int reversePin[2] = {16, 17};
+// const int motorPinFwd[2] = {5, 12};
+// const int reversePin[2] = {13, 23};
 const int resetFlashPin = 18;
-const int resetESPin = 14;
+// const int resetESPin = 14;
 const int buzzerPin = 19;
 
 // const int greenLight = 2;
@@ -24,17 +24,17 @@ ezButton resetButton(resetFlashPin);
 //======================================================================
 
 // Interrupt service routine to reset the ESP32
-void IRAM_ATTR resetModule() {
-  Serial.println("Resetting module...");
-  for (int i = 0; i < 5; i++)
-  {
-    digitalWrite(buzzerPin, HIGH);
-    delay(200);
-    digitalWrite(buzzerPin, LOW);
-    delay(200);
-  }
-  esp_restart();
-}
+// void IRAM_ATTR resetModule() {
+//   Serial.println("Resetting module...");
+//   for (int i = 0; i < 5; i++)
+//   {
+//     digitalWrite(buzzerPin, HIGH);
+//     delay(200);
+//     digitalWrite(buzzerPin, LOW);
+//     delay(200);
+//   }
+//   // esp_restart();
+// }
 
 void setup() {
 
@@ -66,7 +66,7 @@ void loop() {
   resetButton.loop();
   if(resetButton.isPressed() && !reset)
   {
-    Serial.println("=========== FLASH MEMORY RESET ===========");
+    Serial.println("=========== ESP32 RESET ===========");
     digitalWrite(buzzerPin, HIGH);
     delay(2000);
     digitalWrite(buzzerPin, LOW);
@@ -86,6 +86,7 @@ void loop() {
     }
 
     updateSpeed();
+    // updateSpeedManual(speed[0], speed[1]);
     printSpeed();
 
   }
@@ -93,13 +94,11 @@ void loop() {
     killswitch();
 
     Serial.println("Not Connected...");
-    speed[0] = 100;
-    speed[1] = 100;
-    
+    // speed[0] = 100;
+    // speed[1] = 100;
+    motorWrite();
     delay(500);
   }
-
-  motorWrite();
 }
 
 void killswitch()
@@ -126,7 +125,39 @@ void updateSpeed()
       speed[i] = -255;
     else if(abs(speed[i]) < 15)
       speed[i] = 0;
+
+    if(speed[i] < 0){
+      revState[i] = HIGH;
+    }
+    else{
+      revState[i] = LOW;
+    }
+    digitalWrite(reversePin[i], revState[i]);
+    analogWrite(motorPinFwd[i], abs(speed[i]));
   }
+}
+
+void updateSpeedManual(int &speed1, int &speed2)
+{
+  speed1 = ps5.LStickY() * 1.5 + 0.25 * ps5.R2() - 0,25 * ps5.L2();
+  speed2 = ps5.LStickY() * 1.5 + 0.25 * ps5.R2() - 0,25 * ps5.L2();
+
+  speed1 -= ps5.RStickX() * 0.5 - ps5.Right() * 255 + ps5.Left() * 255 - ps5.Up() * 255 + ps5.Down() * 255;
+  speed2 += ps5.RStickX() * 0.5 - ps5.Right() * 255 + ps5.Left() * 255 + ps5.Up() * 255 - ps5.Down() * 255;
+
+  if(speed1 > 255)
+    speed1 = 255;
+  else if(speed1 < -255)
+    speed1 = -255;
+  else if(abs(speed1) < 15)
+    speed1 = 0;
+
+  if(speed2 > 255)
+    speed2 = 255;
+  else if(speed2 < -255)
+    speed2 = -255;
+  else if(abs(speed2) < 15)
+    speed2 = 0;
 }
 
 unsigned long int printSpeedTime;
